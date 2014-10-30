@@ -38,7 +38,7 @@ func TestReadOddIsAFalse(t *testing.T) {
 }
 
 // This test verifies that the observer
-// when reading an even amount of observers (we assume always odd amt of diners)
+// when reading an even amount of isSames
 // that a bit has been emitted. In this case true == 1
 // and false == 0
 func TestReadEvenIsATrue(t *testing.T) {
