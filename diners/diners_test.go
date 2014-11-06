@@ -2,6 +2,7 @@ package diners
 
 import (
 	"brahms/diningcrypto/common"
+	"brahms/diningcrypto/utils"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -49,19 +50,13 @@ func TestSomeRounds(t *testing.T) {
 	result3 := <-channel
 	log.Debug("Got result 3: %v", result3)
 
-	sameCount := 0
-	if result1.IsSame {
-		sameCount++
-	}
-	if result2.IsSame {
-		sameCount++
-	}
-	if result3.IsSame {
-		sameCount++
-	}
+	bit := false
+	bit = utils.XOR(bit, result1.IsDifferent)
+	bit = utils.XOR(bit, result2.IsDifferent)
+	bit = utils.XOR(bit, result3.IsDifferent)
 
-	assert.Equal(t, true, sameCount%2 == 1,
-		"The same count should be odd, meaning a 0 is emitted")
+	assert.Equal(t, false, bit,
+		"The bit should be a 0 (false)")
 
 	// lets try byte 3, since it's the first 1 in 'H'
 	go diner1.Dine(3)
@@ -75,18 +70,12 @@ func TestSomeRounds(t *testing.T) {
 	result3 = <-channel
 	log.Debug("Got result 3: %v", result3)
 
-	sameCount = 0
-	if result1.IsSame {
-		sameCount++
-	}
-	if result2.IsSame {
-		sameCount++
-	}
-	if result3.IsSame {
-		sameCount++
-	}
+	bit = false
+	bit = utils.XOR(bit, result1.IsDifferent)
+	bit = utils.XOR(bit, result2.IsDifferent)
+	bit = utils.XOR(bit, result3.IsDifferent)
 
-	assert.Equal(t, true, sameCount%2 == 0,
-		"The same count should be even, meaning a 1 is emitted")
+	assert.Equal(t, true, bit,
+		"The bit should be 1 (true)")
 
 }

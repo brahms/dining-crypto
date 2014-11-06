@@ -23,13 +23,12 @@ func TestNew(t *testing.T) {
 	assert.Equal(t, totalDiners, observer.totalDiners, "Total diners should be equal")
 }
 
-// This test verifies that the observer when given a odd amount of
-// isSame thinks that their is a 0 bit emitted
-func TestReadOddIsAFalse(t *testing.T) {
+// This test verifies that 0 0 0 0 .. n == 0
+func TestAllSameIsAFalse(t *testing.T) {
 	observer := makeObserver()
 
 	for i := 0; i < totalDiners; i++ {
-		observer.Channel <- common.ObserverMessage{IsSame: true, DinerId: uint(i)}
+		observer.Channel <- common.ObserverMessage{IsDifferent: false, DinerId: uint(i)}
 	}
 
 	currentBit := observer.Read()
@@ -37,15 +36,12 @@ func TestReadOddIsAFalse(t *testing.T) {
 	assert.Equal(t, false, currentBit, "The currentBit should be false")
 }
 
-// This test verifies that the observer
-// when reading an even amount of isSames
-// that a bit has been emitted. In this case true == 1
-// and false == 0
-func TestReadEvenIsATrue(t *testing.T) {
+// This test verifies that 0 1 0 0 .. n == 1
+func TestOneDifferenceIsATrue(t *testing.T) {
 	observer := makeObserver()
 
 	for i := 0; i < totalDiners; i++ {
-		observer.Channel <- common.ObserverMessage{IsSame: (i != 1), DinerId: uint(i)}
+		observer.Channel <- common.ObserverMessage{IsDifferent: (i == 1), DinerId: uint(i)}
 	}
 
 	currentBit := observer.Read()
@@ -55,9 +51,6 @@ func TestReadEvenIsATrue(t *testing.T) {
 
 // Tests that the observer is able to read two bytes
 // From the channel
-// Our byte array shown below should be read from right to left
-// and contains two bytes. The rightmost byte is 64, the leftmost
-// is 65
 func TestReadATwoByte(t *testing.T) {
 	observer := makeObserver()
 	a := []uint{0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0}
@@ -66,8 +59,8 @@ func TestReadATwoByte(t *testing.T) {
 		log.Debug("Current bit is: %v", a[index])
 		for dinerId := 0; dinerId < totalDiners; dinerId++ {
 			observer.Channel <- common.ObserverMessage{
-				IsSame:  dinerId != 1 || !currentBit,
-				DinerId: uint(dinerId)}
+				IsDifferent: dinerId == 1 && currentBit,
+				DinerId:     uint(dinerId)}
 		}
 		readBit := observer.Read()
 		assert.Equal(t, currentBit, readBit, "The current and read bits should be equal")

@@ -2,6 +2,7 @@ package observer
 
 import (
 	"brahms/diningcrypto/common"
+	"brahms/diningcrypto/utils"
 	"fmt"
 	"github.com/op/go-logging"
 )
@@ -38,29 +39,16 @@ func (observer *Observer) Read() bool {
 	// lets assume the current bit is 0 (false)
 	currentBit := false
 
-	// let's start off with a same count of 0
-	isSameCount := 0
-
 	// we must read all our channels before making a decision
 	for i := uint(0); i < observer.totalDiners; i++ {
 		msg := <-observer.Channel
 
-		if msg.IsSame {
-			isSameCount++
-		}
+		currentBit = utils.XOR(currentBit, msg.IsDifferent)
 
 		log.Debug("Round: %v, got from %v -> %v,",
-			observer.round, msg.DinerId, msg.IsSame)
+			observer.round, msg.DinerId, msg.IsDifferent)
 	}
 
-	// if the same count is an even number, then the currentBit is 1 (true)
-	if isSameCount%2 == 0 {
-		currentBit = true
-		log.Debug("Round: %v, isSame count is even", observer.round)
-	} else { // else the bit is a 0
-		currentBit = false
-		log.Debug("Round: %v, isSame count is odd", observer.round)
-	}
 	log.Info("Round: %v, currentBit will be %v", observer.round, currentBit)
 
 	// since our bytes are zeroed, we need to only modify them

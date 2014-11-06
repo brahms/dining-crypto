@@ -1,6 +1,6 @@
 package common
 
 type ObserverMessage struct {
-	IsSame  bool
-	DinerId uint
+	IsDifferent bool
+	DinerId     uint
 }

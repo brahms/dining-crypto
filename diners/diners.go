@@ -110,17 +110,17 @@ func (diner *Diner) Dine(round uint) {
 	log.Debug("%v Comparing mine %v to left's %v", diner, myRandom, leftRandom)
 
 	// do we have the same values?
-	isSame := (myRandom == leftRandom)
+	isDifferent := utils.XOR(leftRandom, myRandom)
 
 	// let's assume we aren't lying
-	valueToSend := isSame
+	valueToSend := isDifferent
 
 	// however if we are, let's flip our valueToSend
 	if isLiar {
 		valueToSend = !valueToSend
 	}
 
-	log.Debug("%v, isLiar: %v, isSame: %v, valueToSend: %v", diner, isLiar, isSame, valueToSend)
+	log.Debug("%v, isLiar: %v, isDifferent: %v, valueToSend: %v", diner, isLiar, isDifferent, valueToSend)
 
 	// let our observer know what our value is
 	diner.observerChannel <- common.ObserverMessage{valueToSend, diner.id}

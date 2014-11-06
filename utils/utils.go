@@ -63,3 +63,16 @@ func GenerateRandomBytes(n int) []byte {
 	lock.Unlock()
 	return b
 }
+
+// xors two booleans
+func XOR(a bool, b bool) bool {
+	if a == false && b == false {
+		return false
+	} else if a == false && b == true {
+		return true
+	} else if a == true && b == false {
+		return true
+	} else {
+		return false
+	}
+}
