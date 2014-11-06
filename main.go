@@ -6,6 +6,7 @@ import (
 	"brahms/diningcrypto/utils"
 	"github.com/op/go-logging"
 	"os"
+	"strconv"
 )
 
 const (
@@ -14,10 +15,26 @@ const (
 )
 
 var (
-	log = logging.MustGetLogger("brahms.diningcrypto.main")
-	//format = "[%{color}%{level:.1s}] %{color:reset} [%{time:15:04:05.000000}] --- %{message}"
+	log    = logging.MustGetLogger("brahms.diningcrypto.main")
 	format = "[%{level:.1s}] [%{time:15:04:05.000000}] --- %{message} |==> %{shortfile}\n"
 )
+
+func getMessageHolderIndex() uint {
+	args := os.Args[1:]
+	if 1 <= len(args) {
+		index, err := strconv.ParseUint(args[0], 10, 32)
+		if nil == err && index < TOTAL_DINERS {
+			log.Info("Parsed message holder from commandline: %v", index)
+			return uint(index)
+		} else {
+			log.Fatalf("Argument must be a valid integer less than %v", TOTAL_DINERS)
+		}
+	}
+
+	index := uint(utils.NextIntLessThan(int(TOTAL_DINERS)))
+	log.Info("Using random value to decide message holder: %v", index)
+	return index
+}
 
 func main() {
 
@@ -57,7 +74,8 @@ func main() {
 	}
 
 	// figure out a random diner to hold the message
-	messageHolderI := utils.NextIntLessThan(int(totalDiners))
+
+	messageHolderI := getMessageHolderIndex()
 	dinersList[messageHolderI].SetMessage(message)
 
 	log.Info("Setting diner %v: %v to hold message",

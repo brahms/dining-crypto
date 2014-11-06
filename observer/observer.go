@@ -39,7 +39,8 @@ func (observer *Observer) Read() bool {
 	// lets assume the current bit is 0 (false)
 	currentBit := false
 
-	// we must read all our channels before making a decision
+	// let's run through all our channels and update
+	// our current bit as we go along
 	for i := uint(0); i < observer.totalDiners; i++ {
 		msg := <-observer.Channel
 
