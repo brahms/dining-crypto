@@ -21,8 +21,8 @@ var (
 
 func getMessageHolderIndex() uint {
 	args := os.Args[1:]
-	if 1 <= len(args) {
-		index, err := strconv.ParseUint(args[0], 10, 32)
+	if 2 <= len(args) {
+		index, err := strconv.ParseUint(args[1], 10, 32)
 		if nil == err && index < TOTAL_DINERS {
 			log.Info("Parsed message holder from commandline: %v", index)
 			return uint(index)
@@ -34,6 +34,22 @@ func getMessageHolderIndex() uint {
 	index := uint(utils.NextIntLessThan(int(TOTAL_DINERS)))
 	log.Info("Using random value to decide message holder: %v", index)
 	return index
+}
+
+func getTotalDiners() uint {
+	args := os.Args[1:]
+
+	if 1 <= len(args) {
+		index, err := strconv.ParseUint(args[0], 10, 32)
+		if nil == err {
+			log.Info("Parsed total diners from commandline: %v", index)
+			return uint(index)
+		} else {
+			log.Fatalf("Argument must be a valid integer less than %v", TOTAL_DINERS)
+		}
+	}
+
+	return TOTAL_DINERS
 }
 
 func main() {
@@ -48,7 +64,8 @@ func main() {
 	message := []byte(MESSAGE_STRING)
 
 	totalRounds := uint(len(message) * 8)
-	totalDiners := uint(TOTAL_DINERS)
+	totalDiners := getTotalDiners()
+	messageHolderI := getMessageHolderIndex()
 
 	log.Info("Making: %v diners to send %v bytes: [%X]", totalDiners, len(message), message)
 
@@ -72,10 +89,6 @@ func main() {
 	for i := uint(0); i < totalDiners-1; i++ {
 		dinersList[i].HookupRightChannel(dinersList[i+1])
 	}
-
-	// figure out a random diner to hold the message
-
-	messageHolderI := getMessageHolderIndex()
 	dinersList[messageHolderI].SetMessage(message)
 
 	log.Info("Setting diner %v: %v to hold message",
