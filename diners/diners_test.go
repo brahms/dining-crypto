@@ -13,10 +13,10 @@ const (
 )
 
 func makeDinerWithChannel(id int, channel chan common.ObserverMessage) *Diner {
-	return New(uint(id), channel)
+	return New(uint(id), channel, make(chan common.RoundResult, 100))
 }
 func makeDiner(id int) *Diner {
-	return New(uint(id), make(chan common.ObserverMessage))
+	return New(uint(id), make(chan common.ObserverMessage), make(chan common.RoundResult, 100))
 }
 
 func TestNew(t *testing.T) {

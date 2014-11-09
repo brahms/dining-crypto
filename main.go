@@ -1,6 +1,7 @@
 package main
 
 import (
+	"brahms/diningcrypto/common"
 	"brahms/diningcrypto/diners"
 	"brahms/diningcrypto/observer"
 	"brahms/diningcrypto/utils"
@@ -63,9 +64,16 @@ func main() {
 	// convert out message into a byte array
 	message := []byte(MESSAGE_STRING)
 
+	// the total rounds we need to send the message
 	totalRounds := uint(len(message) * 8)
+	// the total amount of diners
 	totalDiners := getTotalDiners()
+	// the diner who will be the message holder/liar
 	messageHolderI := getMessageHolderIndex()
+	// the channel to get all the results
+	resultChannel := make(chan common.RoundResult, totalDiners)
+	// a array to store the results so we can tell who lied
+	resultArray := make([]common.RoundResult, totalDiners)
 
 	log.Info("Making: %v diners to send %v bytes: [%X]", totalDiners, len(message), message)
 
@@ -77,7 +85,7 @@ func main() {
 
 	// initialize our list of diners
 	for i := uint(0); i < totalDiners; i++ {
-		newDiner := diners.New(uint(i), obs.Channel)
+		newDiner := diners.New(uint(i), obs.Channel, resultChannel)
 		log.Info("Creating diner #%v: %v", i, newDiner)
 		dinersList[i] = newDiner
 	}
@@ -101,6 +109,12 @@ func main() {
 		}
 		// at the end of each round we have the observer read
 		obs.Read()
+		// and let's store the round result and tell who lied
+		for dinerId := uint(0); dinerId < totalDiners; dinerId++ {
+			result := <-resultChannel
+			resultArray[result.DinerId] = result
+		}
+		figureOutWhoLied(round, resultArray)
 	}
 
 	// once we have completed all the rounds, the observer
@@ -109,4 +123,44 @@ func main() {
 
 	// log it as our last and final act, goodbye dear diners
 	log.Info("Message sent to observer is: '%v' (%v characters)", messageAsString, len(messageAsString))
+}
+func getLeftDiner(dinerId uint, totalDiners uint) uint {
+	if dinerId == 0 {
+		return totalDiners - 1
+	}
+	return dinerId - 1
+}
+func figureOutWhoLied(round uint, results []common.RoundResult) (uint, bool) {
+	log.Info("Figuring out who lied for round %v", round)
+
+	// lets assume no one lied
+	someoneLied := false
+	totalDiners := uint(len(results))
+
+	for dinerId := uint(0); dinerId < totalDiners; dinerId++ {
+		result := results[dinerId]
+		someoneLied = utils.XOR(someoneLied, result.IsDifferent)
+	}
+	if someoneLied {
+
+		for dinerId := uint(0); dinerId < totalDiners; dinerId++ {
+			leftDinerId := getLeftDiner(dinerId, totalDiners)
+			leftResult := results[leftDinerId]
+			thisResult := results[dinerId]
+			expectedIsDifferent := utils.XOR(leftResult.CoinValue, thisResult.CoinValue)
+			actualIsDifferent := thisResult.IsDifferent
+
+			if expectedIsDifferent != actualIsDifferent {
+				log.Info("LIAR LIAR PANTS ON FIRE: Diner %v lied round %v", dinerId, round)
+				return dinerId, true
+			}
+		}
+	} else {
+		log.Info("No one lied round: %v", round)
+		return 0, false
+	}
+
+	log.Panic("Should not reach this line")
+	return 0, false
+
 }

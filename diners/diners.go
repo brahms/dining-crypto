@@ -17,17 +17,19 @@ type Diner struct {
 	rightChannel    chan bool
 	observerChannel chan common.ObserverMessage
 	id              uint
+	resultChannel   chan common.RoundResult
 }
 
 // Creates a diner
 // The right channel is nil initially
-func New(id uint, observerChannel chan common.ObserverMessage) *Diner {
+func New(id uint, observerChannel chan common.ObserverMessage, resultChannel chan common.RoundResult) *Diner {
 	return &Diner{
 		nil,
 		make(chan bool, 1),
 		nil,
 		observerChannel,
-		id}
+		id,
+		resultChannel}
 }
 
 // Sets this diner's message from nil to the given bytes
@@ -94,23 +96,24 @@ func (diner *Diner) Dine(round uint) {
 	isLiar := diner.isLiar(round)
 
 	// our "coin flip"
-	myRandom := utils.NextBool()
+	myCoin := utils.NextBool()
+	log.Debug("Round: %v, Diner: %v, Coin: %v", round, diner.id, myCoin)
 
-	log.Debug("%v Sending to right: %v", diner, myRandom)
+	log.Debug("%v Sending to right: %v", diner, myCoin)
 
 	// send the value to our right channel
-	diner.rightChannel <- myRandom
+	diner.rightChannel <- myCoin
 
 	log.Debug("%v Receiving from left", diner)
 
 	// and wait for our left channel to tell us their value
-	leftRandom := <-diner.leftChannel
+	leftCoin := <-diner.leftChannel
 
-	log.Debug("%v Received: %v", diner, leftRandom)
-	log.Debug("%v Comparing mine %v to left's %v", diner, myRandom, leftRandom)
+	log.Debug("%v Received: %v", diner, leftCoin)
+	log.Debug("%v Comparing mine %v to left's %v", diner, myCoin, leftCoin)
 
 	// do we have the same values?
-	isDifferent := utils.XOR(leftRandom, myRandom)
+	isDifferent := utils.XOR(leftCoin, myCoin)
 
 	// let's assume we aren't lying
 	valueToSend := isDifferent
@@ -124,7 +127,10 @@ func (diner *Diner) Dine(round uint) {
 
 	// let our observer know what our value is
 	diner.observerChannel <- common.ObserverMessage{valueToSend, diner.id}
-
+	diner.resultChannel <- common.RoundResult{
+		IsDifferent: valueToSend,
+		DinerId:     diner.id,
+		CoinValue:   myCoin}
 	// and let the logs know we finished this course
 	log.Debug("Diner %v finished round: %v", diner.id, round)
 }
